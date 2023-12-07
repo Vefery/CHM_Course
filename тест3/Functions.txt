@@ -1,0 +1,90 @@
+double FEM::Lamda(int vert, int region)
+{
+	switch (region)
+	{
+	case 1:
+		return 1;
+	case 2:
+		return 2;
+	default:
+		return NAN;
+	}
+}
+
+double FEM::Gamma(int vert, int region)
+{
+	switch (region)
+	{
+	case 1:
+		return 5;
+	case 2:
+		return 4;
+	default:
+		return NAN;
+	}
+}
+
+double FEM::Function(int vert, int region)
+{
+	switch (region)
+	{
+	case 1:
+		return 5.0 * vertices[vert].x + 10.0 * vertices[vert].y;
+	case 2:
+		return -2.0 * vertices[vert].x + 8.0 * vertices[vert].y + 12;
+	default:
+		return NAN;
+	}
+}
+
+double FEM::Beta(int vert, int eqNum)
+{
+	switch (eqNum)
+	{
+	case 1:
+		return 5;
+	case 2:
+		return 4;
+	default:
+		return NAN;
+	}
+}
+
+double FEM::Ubeta(int vert, int eqNum)
+{
+	switch (eqNum)
+	{
+	case 1:
+		return (24.0 - 2 * vertices[vert].x) / 4.0;
+	case 2:
+		return (10.0 * vertices[vert].y - 1) / 5.0;
+	default:
+		return NAN;
+	}
+}
+
+double FEM::Theta(int vert, int eqNum)
+{
+	switch (eqNum)
+	{
+	case 1:
+		return -4;
+	case 2:
+		return -1;
+	case 3:
+		return 2;
+	default:
+		return NAN;
+	}
+}
+
+double FEM::Ug(int vert, int eqNum)
+{
+	switch (eqNum)
+	{
+	case 1:
+		return vertices[vert].x;
+	default:
+		return NAN;
+	}
+}
