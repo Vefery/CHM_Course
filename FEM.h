@@ -46,11 +46,12 @@ public:
 	void Input();
 	void Solve();
 private:
-	double G[3][3] = {};
-	double M[3][3] = { {2, 1, 1}, {1, 2, 1}, {1, 1, 2} };
 	int regionsNum, globalN;
 	int* ig, * jg;
 	double* ggl, * ggu, * di, * b;
+	double G[3][3]{};
+	double M[3][3] = { {2, 1, 1}, {1, 2, 1}, {1, 1, 2} };
+	double localB[3]{};
 
 	double Lamda(int vert, int region);
 	double Gamma(int vert, int region);
@@ -71,5 +72,5 @@ private:
 	void ResolveBoundaries();
 	void AddToGlobal(int i, int j, double add);
 	void AllocateGlobalMatrix();
-	double* FormB(Triangle tri);
+	void FormB(Triangle tri);
 };

@@ -195,7 +195,7 @@ void SLAE::OutputLUDense()
 	printf("\n");
 }
 
-void SLAE::MatrixVectorMultiplication(double* vectorMult, double* vectorOut)
+void SLAE::MatrixVectorMultiplication(double* vectorMult, double* vectorOut) const
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -209,7 +209,7 @@ void SLAE::MatrixVectorMultiplication(double* vectorMult, double* vectorOut)
 	}
 }
 
-void SLAE::TransposedMatrixVectorMultiplication(double* vectorMult, double* vectorOut)
+void SLAE::TransposedMatrixVectorMultiplication(double* vectorMult, double* vectorOut) const
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -432,8 +432,6 @@ void SLAE::MethodOfConjugateGradientsForNonSymMatrixWithDiagP()
 	}
 
 	VectorConditionalityForNonSymMatrixDiagP(x, x);
-
-	printf("%.15lf\n", CalculateRelativeDiscrepancy(normB));
 }
 
 void SLAE::MethodOfConjugateGradientsForNonSymMatrixWithLuP()
@@ -560,7 +558,7 @@ void SLAE::MethodOfConjugateGradientsForNonSymMatrixWithLuSqP()
 //**********************************************************************
 
 
-void SLAE::VectorUVectorMultiplication(double *x)
+void SLAE::VectorUVectorMultiplication(double *x) const
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -745,7 +743,7 @@ void SLAE::GenerateHilbertMatrix(int size)
 //**********************************************************************
 
 
-void SLAE::CalculateRelativeDiscrepancy(double * vectorMult, double * vectorOut)
+void SLAE::CalculateRelativeDiscrepancy(double * vectorMult, double * vectorOut) const
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -760,7 +758,7 @@ void SLAE::CalculateRelativeDiscrepancy(double * vectorMult, double * vectorOut)
 	}
 }
 
-void SLAE::VectorConditionalityForSymMatrixDiagP(double* vectorIn, double* vectorOut)
+void SLAE::VectorConditionalityForSymMatrixDiagP(double* vectorIn, double* vectorOut) const
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -776,7 +774,7 @@ void SLAE::Calculate_dP()
 	}
 }
 
-void SLAE::VectorConditionalityForNonSymMatrixDiagP(double* vectorIn, double* vectorOut)
+void SLAE::VectorConditionalityForNonSymMatrixDiagP(double* vectorIn, double* vectorOut) const
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -784,7 +782,7 @@ void SLAE::VectorConditionalityForNonSymMatrixDiagP(double* vectorIn, double* ve
 	}
 }
 
-void SLAE::VectorSubtract(double* first, double* second, double* result)
+void SLAE::VectorSubtract(double* first, double* second, double* result) const
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -793,7 +791,7 @@ void SLAE::VectorSubtract(double* first, double* second, double* result)
 }
 
 
-void SLAE::VectorCopy(double* from, double* to)
+void SLAE::VectorCopy(double* from, double* to) const
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -801,7 +799,7 @@ void SLAE::VectorCopy(double* from, double* to)
 	}
 }
 
-double SLAE::VectorScalarProduction(double* vector1, double* vector2)
+double SLAE::VectorScalarProduction(double* vector1, double* vector2) const
 {
 	double prod = 0;
 	for (int i = 0; i < n; i++)
@@ -811,7 +809,7 @@ double SLAE::VectorScalarProduction(double* vector1, double* vector2)
 	return prod;
 }
 
-double SLAE::VectorScalarProduction(double* vector)
+double SLAE::VectorScalarProduction(double* vector) const
 {
 	double prod = 0;
 	for (int i = 0; i < n; i++)
@@ -821,7 +819,7 @@ double SLAE::VectorScalarProduction(double* vector)
 	return prod;
 }
 
-double SLAE::VectorNorm(double* vector)
+double SLAE::VectorNorm(double* vector) const
 {
 	double norm = 0;
 	for (int i = 0; i < n; i++)
@@ -842,7 +840,7 @@ void SLAE::VectorOutputSolution(FILE* out)
 }
 
 
-void SLAE::SolveForwardLU(double* lowerTringMat,double *diag, double* rightVector, double* vectorX) {
+void SLAE::SolveForwardLU(double* lowerTringMat,double *diag, double* rightVector, double* vectorX) const {
 	for (int i0, i1, i = 0; i < n; i++)
 	{
 		double sum = 0;
@@ -858,7 +856,7 @@ void SLAE::SolveForwardLU(double* lowerTringMat,double *diag, double* rightVecto
 	}
 }
 
-void SLAE::SolveForwardLU(double* lowerTringMat, double* rightVector, double* vectorX) {
+void SLAE::SolveForwardLU(double* lowerTringMat, double* rightVector, double* vectorX) const {
 	for (int i0, i1, i = 0; i < n; i++)
 	{
 		double sum = 0;
@@ -875,7 +873,7 @@ void SLAE::SolveForwardLU(double* lowerTringMat, double* rightVector, double* ve
 }
 
 
-void SLAE::SolveBackwardLU(double* upperTringMat, double* diag, double* rightVector, double* vectorX) {
+void SLAE::SolveBackwardLU(double* upperTringMat, double* diag, double* rightVector, double* vectorX) const {
 	for (int i0, i1, i = n - 1; i >= 0; i--)
 	{
 		i0 = ia[i];
@@ -889,7 +887,7 @@ void SLAE::SolveBackwardLU(double* upperTringMat, double* diag, double* rightVec
 	}
 }
 
-void SLAE::SolveBackwardLU(double* upperTringMat, double* rightVector, double* vectorX) {
+void SLAE::SolveBackwardLU(double* upperTringMat, double* rightVector, double* vectorX) const {
 	for (int i0, i1, i = n - 1; i >= 0; i--)
 	{
 		i0 = ia[i];
@@ -904,7 +902,7 @@ void SLAE::SolveBackwardLU(double* upperTringMat, double* rightVector, double* v
 }
 
 
-void SLAE::MatrixUVectorMultiplicationLU(double* upperTringMat, double* vectorMult, double* vectorOut)
+void SLAE::MatrixUVectorMultiplicationLU(double* upperTringMat, double* vectorMult, double* vectorOut) const
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -917,7 +915,7 @@ void SLAE::MatrixUVectorMultiplicationLU(double* upperTringMat, double* vectorMu
 	}
 }
 
-void SLAE::MatrixUVectorMultiplicationLU(double* upperTringMat, double* diag, double* vectorMult, double* vectorOut)
+void SLAE::MatrixUVectorMultiplicationLU(double* upperTringMat, double* diag, double* vectorMult, double* vectorOut) const
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -930,7 +928,7 @@ void SLAE::MatrixUVectorMultiplicationLU(double* upperTringMat, double* diag, do
 	}
 }
 
-void SLAE::CalculateZ_LU(double* vectorOut)
+void SLAE::CalculateZ_LU(double* vectorOut) const
 {
 	SolveBackwardLU(auLU, tmp1, tmp1);
 	MatrixVectorMultiplication(tmp1, x0);
@@ -940,7 +938,7 @@ void SLAE::CalculateZ_LU(double* vectorOut)
 	SolveForwardLU(auLU, x0, vectorOut);
 }
 
-void SLAE::CalculateZ_LUaster(double* vectorOut)
+void SLAE::CalculateZ_LUaster(double* vectorOut) const
 {
 	SolveBackwardLU(auLU, diLU, tmp1, tmp1);
 	MatrixVectorMultiplication(tmp1, x0);
@@ -950,7 +948,7 @@ void SLAE::CalculateZ_LUaster(double* vectorOut)
 	SolveForwardLU(auLU, diLU, x0, vectorOut);
 }
 
-void SLAE::CalculateZ_LUsq(double* vectorOut)
+void SLAE::CalculateZ_LUsq(double* vectorOut) const
 {
 	SolveBackwardLU(auLU, diLU, tmp1, tmp1);
 	MatrixVectorMultiplication(tmp1, x0);
@@ -960,12 +958,12 @@ void SLAE::CalculateZ_LUsq(double* vectorOut)
 	SolveForwardLU(auLU, diLU, x0, vectorOut);
 }
 
-double SLAE::CalculateRelativeDiscrepancyWithR(double norm)
+double SLAE::CalculateRelativeDiscrepancyWithR(double norm) const
 {
 	return VectorNorm(r) / norm;
 }
 
-double SLAE::CalculateRelativeDiscrepancy(double norm)
+double SLAE::CalculateRelativeDiscrepancy(double norm) const
 {
 	MatrixVectorMultiplication(x, tmp1);
 	VectorSubtract(b, tmp1, tmp1);
