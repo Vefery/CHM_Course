@@ -50,7 +50,8 @@ private:
 	int* ig, * jg;
 	double* ggl, * ggu, * di, * b;
 	double G[3][3]{};
-	double M[3][3] = { {2, 1, 1}, {1, 2, 1}, {1, 1, 2} };
+	double M[3][3]{};
+	const double pureM[3][3] = { {2, 1, 1}, {1, 2, 1}, {1, 1, 2} };
 	double localB[3]{};
 
 	double Lamda(int vert, int region);

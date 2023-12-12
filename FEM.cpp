@@ -7,9 +7,9 @@ double FEM::Lamda(int vert, int region)
 	switch (region)
 	{
 	case 1:
-		return 1;
+		return 1.0;
 	case 2:
-		return 1;
+		return 2.0;
 	default:
 		return NAN;
 	}
@@ -20,9 +20,9 @@ double FEM::Gamma(int vert, int region)
 	switch (region)
 	{
 	case 1:
-		return 1.0/3.0;
+		return 1.0;
 	case 2:
-		return 1;
+		return 2.0;
 	default:
 		return NAN;
 	}
@@ -33,9 +33,9 @@ double FEM::Function(int vert, int region)
 	switch (region)
 	{
 	case 1:
-		return 4.0 - vertices[vert].x;
+		return vertices[vert].x + vertices[vert].y;
 	case 2:
-		return 6.0 * vertices[vert].x - 15.0;
+		return vertices[vert].x +  vertices[vert].y + 6.0;
 	default:
 		return NAN;
 	}
@@ -43,15 +43,7 @@ double FEM::Function(int vert, int region)
 
 double FEM::Beta(int vert, int eqNum)
 {
-	switch (eqNum)
-	{
-	case 1:
-		return 1.0/5.0;
-	case 2:
-		return 1.0/6.0;
-	default:
-		return NAN;
-	}
+	return 1;
 }
 
 double FEM::Ubeta(int vert, int eqNum)
@@ -59,9 +51,11 @@ double FEM::Ubeta(int vert, int eqNum)
 	switch (eqNum)
 	{
 	case 1:
-		return 6.0 * vertices[vert].x;
+		return 5.0 + vertices[vert].y;
 	case 2:
-		return -3.0 * vertices[vert].x;
+		return 1.0 + vertices[vert].x;
+	case 3:
+		return 5.0 + vertices[vert].x;
 	default:
 		return NAN;
 	}
@@ -72,11 +66,11 @@ double FEM::Theta(int vert, int eqNum)
 	switch (eqNum)
 	{
 	case 1:
-		return 0;
+		return 1;
 	case 2:
-		return -6;
+		return -1;
 	case 3:
-		return 0;
+		return 1;
 	default:
 		return NAN;
 	}
@@ -87,7 +81,9 @@ double FEM::Ug(int vert, int eqNum)
 	switch (eqNum)
 	{
 	case 1:
-		return 2.0 * vertices[vert].x + 5.0;
+		return 6;
+	case 2:
+		return 4;
 	default:
 		return NAN;
 	}
@@ -189,7 +185,7 @@ void FEM::Solve()
 	ResolveBoundaries();
 
 	SLAE slae;
-	slae.Input(globalN, 100000, 1e-15, ig, jg, ggl, ggu, di, b);
+	slae.Input(globalN, 100000, 1e-30, ig, jg, ggl, ggu, di, b);
 	slae.OutputDense();
 	slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
 	q = slae.x;
@@ -267,25 +263,24 @@ int FEM::IndexOfUnknown(Triangle tri, int i)
 
 void FEM::FormM(Triangle tri)
 {
-	M[0][0] = M[1][1] = M[2][2] = 2;
-	M[0][1] = M[0][2] = M[1][0] = M[2][0] = M[1][2] = M[2][1] = 1;
-	double temp = (GetAverageGamma(tri) * fabs(DetD(tri))) / 24.0;
+	std::copy(&pureM[0][0], &pureM[0][0] + 9, &M[0][0]);
+	double factor = (GetAverageGamma(tri) * fabs(DetD(tri))) / 24.0;
 	for (int i = 0; i < 3; i++)
 	{
 		for (int j = 0; j < 3; j++)
-			M[i][j] *= temp;
+			M[i][j] *= factor;
 	}
 }
 
 void FEM::FormG(Triangle tri)
 {
 	double averageLamda = GetAverageLamda(tri);
-	double temp = averageLamda / (fabs(DetD(tri)) * 2.0);
+	double factor = averageLamda / (fabs(DetD(tri)) * 2.0);
 
 	for (int i = 0; i < 3; i++)
 	{
 		for (int j = 0; j < 3; j++)
-			G[i][j] = temp * (Alpha(tri, 1, i) * Alpha(tri, 1, j) + Alpha(tri, 2, i) * Alpha(tri, 2, j));
+			G[i][j] = factor * (Alpha(tri, 1, i) * Alpha(tri, 1, j) + Alpha(tri, 2, i) * Alpha(tri, 2, j));
 	}
 }
 
@@ -361,10 +356,10 @@ void FEM::FormPortrait()
 void FEM::ResolveBoundaries()
 {
 	// Учет 3 краевых
+	const double localA[2][2] = { {2.0, 1.0}, {1.0, 2.0} };
 	for (int i = 0; i < thirdBoundary.size(); i++)
 	{
 		ThirdBoundaryCondition temp = thirdBoundary[i];
-		double localA[2][2] = { {2.0, 1.0}, {1.0, 2.0} };
 		double factor = (((Beta(temp.vert1, temp.betaEquationNum) + Beta(temp.vert2, temp.betaEquationNum)) / 2.0) * EdgeLength(temp.vert1, temp.vert2)) / 6.0;
 		b[temp.vert1] += factor * (2 * Ubeta(temp.vert1, temp.UbetaEquationNum) + Ubeta(temp.vert2, temp.UbetaEquationNum));
 		b[temp.vert2] += factor * (Ubeta(temp.vert1, temp.UbetaEquationNum) + 2 * Ubeta(temp.vert2, temp.UbetaEquationNum));
@@ -382,7 +377,6 @@ void FEM::ResolveBoundaries()
 		SecondBoundaryCondition temp = secondBoundary[i];
 		double factor = EdgeLength(temp.vert1, temp.vert2) / 6.0;
 		double t1 = factor * (2 * Theta(temp.vert1, temp.equationNum) + Theta(temp.vert2, temp.equationNum));
-		double t2 = factor * (Theta(temp.vert1, temp.equationNum) + 2 * Theta(temp.vert2, temp.equationNum));
 		b[temp.vert1] += factor * (2 * Theta(temp.vert1, temp.equationNum) + Theta(temp.vert2, temp.equationNum));
 		b[temp.vert2] += factor * (Theta(temp.vert1, temp.equationNum) + 2 * Theta(temp.vert2, temp.equationNum));
 	}
