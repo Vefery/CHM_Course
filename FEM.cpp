@@ -1,18 +1,10 @@
-#include "stdafx.h"
+п»ї#include "stdafx.h"
 #include "FEM.h"
 #include "slae.h"
 
 double FEM::Lamda(int vert, int region)
 {
-	switch (region)
-	{
-	case 1:
-		return 1.0;
-	case 2:
-		return 2.0;
-	default:
-		return NAN;
-	}
+	return 1;
 }
 
 double FEM::Gamma(int vert, int region)
@@ -20,9 +12,9 @@ double FEM::Gamma(int vert, int region)
 	switch (region)
 	{
 	case 1:
-		return 1.0;
+		return 5;
 	case 2:
-		return 2.0;
+		return 0;
 	default:
 		return NAN;
 	}
@@ -33,9 +25,9 @@ double FEM::Function(int vert, int region)
 	switch (region)
 	{
 	case 1:
-		return vertices[vert].x + vertices[vert].y;
+		return 5.0 * vertices[vert].x + 30.0 * vertices[vert].y - 10.0;
 	case 2:
-		return vertices[vert].x +  vertices[vert].y + 6.0;
+		return 0;
 	default:
 		return NAN;
 	}
@@ -43,19 +35,20 @@ double FEM::Function(int vert, int region)
 
 double FEM::Beta(int vert, int eqNum)
 {
-	return 1;
+	switch (eqNum)
+	{
+	case 1:
+		return 10;
+	default:
+		return NAN;
+	}
 }
-
 double FEM::Ubeta(int vert, int eqNum)
 {
 	switch (eqNum)
 	{
 	case 1:
-		return 5.0 + vertices[vert].y;
-	case 2:
-		return 1.0 + vertices[vert].x;
-	case 3:
-		return 5.0 + vertices[vert].x;
+		return 6.0 * vertices[vert].y + 2.1;
 	default:
 		return NAN;
 	}
@@ -66,11 +59,11 @@ double FEM::Theta(int vert, int eqNum)
 	switch (eqNum)
 	{
 	case 1:
-		return 1;
+		return -6;
 	case 2:
 		return -1;
 	case 3:
-		return 1;
+		return 6;
 	default:
 		return NAN;
 	}
@@ -81,9 +74,7 @@ double FEM::Ug(int vert, int eqNum)
 	switch (eqNum)
 	{
 	case 1:
-		return 6;
-	case 2:
-		return 4;
+		return 6.0 * vertices[vert].y + 2.0;
 	default:
 		return NAN;
 	}
@@ -91,7 +82,7 @@ double FEM::Ug(int vert, int eqNum)
 
 void FEM::Input()
 {
-	// Считывание узлов
+	// РЎС‡РёС‚С‹РІР°РЅРёРµ СѓР·Р»РѕРІ
 	FILE* file;
 	fopen_s(&file, "Vertices.txt", "r");
 
@@ -108,7 +99,7 @@ void FEM::Input()
 	}
 	fclose(file);
 
-	// Считывание треугольников
+	// РЎС‡РёС‚С‹РІР°РЅРёРµ С‚СЂРµСѓРіРѕР»СЊРЅРёРєРѕРІ
 	fopen_s(&file, "Triangles.txt", "r");
 
 	fscanf_s(file, "%d", &num);
@@ -126,7 +117,7 @@ void FEM::Input()
 	}
 	fclose(file);
 
-	// Считывание краевых
+	// РЎС‡РёС‚С‹РІР°РЅРёРµ РєСЂР°РµРІС‹С…
 	fopen_s(&file, "BoundaryConditions.txt", "r");
 
 	fscanf_s(file, "%d", &num);
@@ -186,9 +177,15 @@ void FEM::Solve()
 
 	SLAE slae;
 	slae.Input(globalN, 100000, 1e-30, ig, jg, ggl, ggu, di, b);
-	slae.OutputDense();
 	slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
 	q = slae.x;
+	PrintSolution();
+}
+
+void FEM::PrintSolution()
+{
+	for (int i = 0; i < globalN; i++)
+		printf_s("%.14e\n", q[i]);
 }
 
 double FEM::GetAverageLamda(Triangle tri)
@@ -355,7 +352,7 @@ void FEM::FormPortrait()
 
 void FEM::ResolveBoundaries()
 {
-	// Учет 3 краевых
+	// РЈС‡РµС‚ 3 РєСЂР°РµРІС‹С…
 	const double localA[2][2] = { {2.0, 1.0}, {1.0, 2.0} };
 	for (int i = 0; i < thirdBoundary.size(); i++)
 	{
@@ -371,7 +368,7 @@ void FEM::ResolveBoundaries()
 				AddToGlobal(globalBasis[i], globalBasis[j], localA[i][j] * factor);
 		}
 	}
-	// Учет 2 краевых
+	// РЈС‡РµС‚ 2 РєСЂР°РµРІС‹С…
 	for (int i = 0; i < secondBoundary.size(); i++)
 	{
 		SecondBoundaryCondition temp = secondBoundary[i];
@@ -380,7 +377,7 @@ void FEM::ResolveBoundaries()
 		b[temp.vert1] += factor * (2 * Theta(temp.vert1, temp.equationNum) + Theta(temp.vert2, temp.equationNum));
 		b[temp.vert2] += factor * (Theta(temp.vert1, temp.equationNum) + 2 * Theta(temp.vert2, temp.equationNum));
 	}
-	// Учет 1 краевых
+	// РЈС‡РµС‚ 1 РєСЂР°РµРІС‹С…
 	for (int i = 0; i < firstBoundary.size(); i++)
 	{
 		FirstBoundaryCondition temp = firstBoundary[i];

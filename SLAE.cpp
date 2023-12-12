@@ -428,7 +428,7 @@ void SLAE::MethodOfConjugateGradientsForNonSymMatrixWithDiagP()
 
 		r_rPrev = r_rCur;
 
-		printf("Iteration: %d, RelDiscrepancy of r: %.15lf\n", curIt + 1, RelDiscrepancy);
+		//printf("Iteration: %d, RelDiscrepancy of r: %.15lf\n", curIt + 1, RelDiscrepancy);
 	}
 
 	VectorConditionalityForNonSymMatrixDiagP(x, x);
