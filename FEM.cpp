@@ -4,66 +4,45 @@
 
 double FEM::Lamda(int vert, int region)
 {
-	return 1;
+	// Зависит от конкретной задачи
+	return 1.0;
 }
 
 double FEM::Gamma(int vert, int region)
 {
-	switch (region)
-	{
-	case 1:
-		return 5;
-	case 2:
-		return 0;
-	default:
-		return NAN;
-	}
+	// Зависит от конкретной задачи
+	return 1.0;
 }
 
 double FEM::Function(int vert, int region)
 {
-	switch (region)
-	{
-	case 1:
-		return 5.0 * vertices[vert].x + 30.0 * vertices[vert].y - 10.0;
-	case 2:
-		return 0;
-	default:
-		return NAN;
-	}
+	// Зависит от конкретной задачи
+	return vertices[vert].y;
 }
 
 double FEM::Beta(int vert, int eqNum)
 {
-	switch (eqNum)
-	{
-	case 1:
-		return 10;
-	default:
-		return NAN;
-	}
+	// Зависит от конкретной задачи
+	return NAN;
 }
+
 double FEM::Ubeta(int vert, int eqNum)
 {
-	switch (eqNum)
-	{
-	case 1:
-		return 6.0 * vertices[vert].y + 2.1;
-	default:
-		return NAN;
-	}
+	// Зависит от конкретной задачи
+	return NAN;
 }
 
 double FEM::Theta(int vert, int eqNum)
 {
+	// Зависит от конкретной задачи
 	switch (eqNum)
 	{
 	case 1:
-		return -6;
+		return vertices[vert].x + 1.0;
 	case 2:
-		return -1;
+		return vertices[vert].y + 1.0;
 	case 3:
-		return 6;
+		return -vertices[vert].x - 1.0;
 	default:
 		return NAN;
 	}
@@ -71,13 +50,8 @@ double FEM::Theta(int vert, int eqNum)
 
 double FEM::Ug(int vert, int eqNum)
 {
-	switch (eqNum)
-	{
-	case 1:
-		return 6.0 * vertices[vert].y + 2.0;
-	default:
-		return NAN;
-	}
+	// Зависит от конкретной задачи
+	return vertices[vert].y;
 }
 
 void FEM::Input()
@@ -153,6 +127,7 @@ void FEM::Input()
 		}
 	}
 	fclose(file);
+	delete file;
 }
 
 void FEM::Solve()
@@ -177,15 +152,17 @@ void FEM::Solve()
 
 	SLAE slae;
 	slae.Input(globalN, 100000, 1e-30, ig, jg, ggl, ggu, di, b);
+	slae.OutputDense();
 	slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
 	q = slae.x;
 	PrintSolution();
+	FreeMemory();
 }
 
 void FEM::PrintSolution()
 {
 	for (int i = 0; i < globalN; i++)
-		printf_s("%.14e\n", q[i]);
+		printf_s("%.14lf\n", q[i]);
 }
 
 double FEM::GetAverageLamda(Triangle tri)
@@ -271,13 +248,18 @@ void FEM::FormM(Triangle tri)
 
 void FEM::FormG(Triangle tri)
 {
-	double averageLamda = GetAverageLamda(tri);
-	double factor = averageLamda / (fabs(DetD(tri)) * 2.0);
+	double factor = 1.0 / (fabs(DetD(tri)) * 6.0);
 
 	for (int i = 0; i < 3; i++)
 	{
-		for (int j = 0; j < 3; j++)
-			G[i][j] = factor * (Alpha(tri, 1, i) * Alpha(tri, 1, j) + Alpha(tri, 2, i) * Alpha(tri, 2, j));
+		for (int j = 0; j < 3; j++) {
+			G[i][j] = 0;
+			int helper[3] = { tri.vert1, tri.vert2, tri.vert3 };
+			for (int k = 0; k < 3; k++) 
+			{
+				G[i][j] += Lamda(helper[k], tri.region) * factor * (Alpha(tri, 1, i) * Alpha(tri, 1, j) + Alpha(tri, 2, i) * Alpha(tri, 2, j));
+			}
+		}
 	}
 }
 
@@ -348,6 +330,9 @@ void FEM::FormPortrait()
 			iaddr = list[1][iaddr];
 		}
 	}
+	delete[] list[0];
+	delete[] list[1];
+	delete[] listbeg;
 }
 
 void FEM::ResolveBoundaries()
@@ -436,6 +421,16 @@ void FEM::AllocateGlobalMatrix()
 
 	ggl = new double[ig[globalN] - ig[0]]();
 	ggu = new double[ig[globalN] - ig[0]]();
+}
+
+void FEM::FreeMemory() 
+{
+	delete[] di;
+	delete[] b;
+	delete[] ggl;
+	delete[] ggu;
+	delete[] ig;
+	delete[] jg;
 }
 
 void FEM::FormB(Triangle tri)

@@ -1,0 +1,37 @@
+double FEM::Lamda(int vert, int region)
+{
+	return 1.0;
+}
+double FEM::Gamma(int vert, int region)
+{
+	return 1.0;
+}
+double FEM::Function(int vert, int region)
+{
+	return log(vertices[vert].x + vertices[vert].y);
+}
+
+double FEM::Beta(int vert, int eqNum)
+{
+	return NAN;
+}
+double FEM::Ubeta(int vert, int eqNum)
+{
+	return NAN;
+}
+double FEM::Theta(int vert, int eqNum)
+{
+	switch (eqNum)
+	{
+	case 1:
+		return 2.0 / (vertices[vert].x + vertices[vert].y);
+	case 2:
+		return -1.0 / (vertices[vert].x + vertices[vert].y);
+	default:
+		return NAN;
+	}
+}
+double FEM::Ug(int vert, int eqNum)
+{
+	return NAN;
+}

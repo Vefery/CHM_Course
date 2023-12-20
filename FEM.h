@@ -74,5 +74,6 @@ private:
 	void ResolveBoundaries(); // Учет всех краевых условий
 	void AddToGlobal(int i, int j, double add); // Добавление значения в глобальную матрицу
 	void AllocateGlobalMatrix(); // Выделение памяти для глобальной матрицы
+	void FreeMemory();
 	void FormB(Triangle tri); // Формирование локального вектора b
 };
