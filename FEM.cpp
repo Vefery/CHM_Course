@@ -11,13 +11,13 @@ double FEM::Lamda(int vert, int region)
 double FEM::Gamma(int vert, int region)
 {
 	// Зависит от конкретной задачи
-	return 1.0;
+	return 0.0;
 }
 
 double FEM::Function(int vert, int region)
 {
 	// Зависит от конкретной задачи
-	return vertices[vert].y;
+	return 2.0 * sin(vertices[vert].x+vertices[vert].y);
 }
 
 double FEM::Beta(int vert, int eqNum)
@@ -35,23 +35,13 @@ double FEM::Ubeta(int vert, int eqNum)
 double FEM::Theta(int vert, int eqNum)
 {
 	// Зависит от конкретной задачи
-	switch (eqNum)
-	{
-	case 1:
-		return vertices[vert].x + 1.0;
-	case 2:
-		return vertices[vert].y + 1.0;
-	case 3:
-		return -vertices[vert].x - 1.0;
-	default:
-		return NAN;
-	}
+	return NAN;
 }
 
 double FEM::Ug(int vert, int eqNum)
 {
 	// Зависит от конкретной задачи
-	return vertices[vert].y;
+	return sin(vertices[vert].y+1);
 }
 
 void FEM::Input()
@@ -152,7 +142,6 @@ void FEM::Solve()
 
 	SLAE slae;
 	slae.Input(globalN, 100000, 1e-30, ig, jg, ggl, ggu, di, b);
-	slae.OutputDense();
 	slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
 	q = slae.x;
 	PrintSolution();
