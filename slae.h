@@ -7,7 +7,7 @@ class SLAE {
 public:
 	int n, maxiter = 10000, nProfile = 0;
 	double  eps = 1e-13;
-	double* al, * au, * diA;
+	double* al, * au, * di;
 	double* alLU, * auLU, * diLU;
 	double* x, * x0, * b, * xtrue, * dP;
 	double* r, * z, * tmp1;

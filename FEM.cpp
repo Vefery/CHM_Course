@@ -11,7 +11,7 @@ double FEM::Lamda(int vert, int region)
 double FEM::Sigma(int vert, int region)
 {
 	// Зависит от конкретной задачи
-	return 0.0;
+	return 1.0;
 }
 
 double FEM::Function(int vert, int region, int tInd)
@@ -49,7 +49,7 @@ double FEM::Ug(int vert, int tInd)
 
 double FEM::Ug(double x, double y, double t)
 {
-	return NAN;
+	return 2 * x * t + 3 * y * t;
 }
 
 void FEM::Input()
@@ -77,12 +77,6 @@ void FEM::Input()
 		fscanf_s(file, "%lf %lf", &tempVert.x, &tempVert.y);
 		vertices.push_back(tempVert);
 	}
-	fclose(file);
-	// Считываем q0
-	fopen_s(&file, "q0.txt", "r");
-	q_2.resize(globalN);
-	for (int i = 0; i < globalN; i++)
-		fscanf_s(file, "%lf", &q_2[i]);
 	fclose(file);
 	// Считывание треугольников
 	fopen_s(&file, "Triangles.txt", "r");
@@ -144,6 +138,13 @@ void FEM::Input()
 void FEM::Solve()
 {
 	SLAE slae;
+	q_2.resize(globalN);
+	for (int i = 0; i < globalN; i++)
+		q_2[i] = Ug(vertices[i].x, vertices[i].y, timeStamps[0]);
+
+	// Временная мера
+	q_1 = { 0,4,10,6,5 };
+	//
 	FormPortrait();
 	AllocateGlobalMatrices();
 	for (int j = 2; j < timeStamps.size(); j++)
@@ -155,16 +156,20 @@ void FEM::Solve()
 		FormGlobalMatrices(j);
 		// Формирую глобальную A
 		double factor = (deltaT + deltaT0) / (deltaT * deltaT0);
-		for (int i = 0; i < ig[globalN]; i++)
+		for (int i = 0; i < ig[globalN]; i++) {
+			gglA[i] = factor * gglM[i];
+			gguA[i] = factor * gguM[i];
+		}
+		for (int i = 0; i < globalN; i++)
 			diA[i] = factor * diM[i];
 		// Формирую правую часть
 		FormGlobalB(deltaT, deltaT0, deltaT1);
 
-		ResolveBoundaries(timeStamps[j]);
+		ResolveBoundaries(j);
 		slae.Input(globalN, 100000, 1e-15, ig.data(), jg.data(), gglA.data(), gguA.data(), diA.data(), b.data());
 		slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
 		q.insert(q.end(), &slae.x[0], &slae.x[slae.n]);
-		PrintSolution();
+		//PrintSolution();
 	}
 }
 
@@ -295,7 +300,7 @@ void FEM::FormGlobalMatrices(int tInd)
 		int globalBasis[3] = { currTri.vert1, currTri.vert2, currTri.vert3 };
 		for (int i = 0; i < 3; i++)
 		{
-			b[globalBasis[i]] += localB[i];
+			pureB[globalBasis[i]] += localB[i];
 			for (int j = 0; j < 3; j++) {
 				AddToGlobalG(globalBasis[i], globalBasis[j], G[i][j]);
 				AddToGlobalM(globalBasis[i], globalBasis[j], M[i][j]);
@@ -307,6 +312,8 @@ void FEM::FormGlobalMatrices(int tInd)
 void FEM::FormGlobalB(double deltaT, double deltaT0, double deltaT1)
 {
 	vector<double> temp1, temp2;
+	temp1.resize(globalN);
+	temp2.resize(globalN);
 	double factor1 = deltaT / (deltaT1 * deltaT0);
 	double factor2 = deltaT0 / (deltaT * deltaT1);
 	// Тут умножение factor1*M-G на q(j-1)
@@ -323,18 +330,18 @@ void FEM::FormGlobalB(double deltaT, double deltaT0, double deltaT1)
 	// Тут умножение factor2*M на q(j-2)
 	for (int i = 0; i < globalN; i++)
 	{
-		temp1[i] = (factor2 * diM[i]) * q_2[i];
+		temp2[i] = factor2 * diM[i] * q_2[i];
 		for (int k = ig[i]; k < ig[i + 1]; k++)
 		{
 			int j = jg[k];
-			temp1[i] += (factor2 * gglM[k]) * q_2[j];
-			temp1[j] += (factor2 * gguM[k]) * q_2[i];
+			temp2[i] += factor2 * gglM[k] * q_2[j];
+			temp2[j] += factor2 * gguM[k] * q_2[i];
 		}
 	}
 	// Финализация правой части
 	for (int i = 0; i < globalN; i++)
 	{
-		b[i] += temp1[i] - temp2[i];
+		b[i] = pureB[i] + temp1[i] - temp2[i];
 	}
 }
 
@@ -410,7 +417,7 @@ void FEM::FormPortrait()
 	delete[] listbeg;
 }
 
-void FEM::ResolveBoundaries(double t)
+void FEM::ResolveBoundaries(int tInd)
 {
 	// Учет 3 краевых
 	const double localA[2][2] = { {2.0, 1.0}, {1.0, 2.0} };
@@ -441,7 +448,7 @@ void FEM::ResolveBoundaries(double t)
 	for (int i = 0; i < firstBoundary.size(); i++)
 	{
 		FirstBoundaryCondition temp = firstBoundary[i];
-		b[temp.vert] = Ug(temp.vert, temp.equationNum, t);
+		b[temp.vert] = Ug(temp.vert, tInd);
 
 		diA[temp.vert] = 1;
 		for (int k = ig[temp.vert]; k < ig[temp.vert + 1]; k++) {
@@ -543,6 +550,7 @@ void FEM::AllocateGlobalMatrices()
 	diM.resize(globalN);
 	diG.resize(globalN);
 	b.resize(globalN);
+	pureB.resize(globalN);
 
 	gglA.resize(ig[globalN] - ig[0]);
 	gguA.resize(ig[globalN] - ig[0]);

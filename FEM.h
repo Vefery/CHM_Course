@@ -51,7 +51,7 @@ public:
 private:
 	int regionsNum, globalN; // Количество областей и узлов
 	vector<int> ig, jg; // Глобальная матрица
-	vector<double> gglA, gguA, diA, gglM, gguM, diM, gglG, gguG, diG, b;
+	vector<double> gglA, gguA, diA, gglM, gguM, diM, gglG, gguG, diG, b, pureB;
 	double G[3][3]{}; // Пустая матрица G
 	double M[3][3]{}; // Пустая матрица M
 	const double pureM[3][3] = { {2, 1, 1}, {1, 2, 1}, {1, 1, 2} }; // Шаблон матрицы M для возвращения ее в исходное состояние на каждой итерации
@@ -77,7 +77,7 @@ private:
 	void FormGlobalMatrices(int tInd); // Формирование глобальных M и G
 	void FormGlobalB(double deltaT, double deltaT0, double deltaT1);
 	void FormPortrait(); // Формирование портрета глобальной матрицы
-	void ResolveBoundaries(double t); // Учет всех краевых условий
+	void ResolveBoundaries(int tInd); // Учет всех краевых условий
 	void AddToGlobalA(int i, int j, double add); // Добавление значения в глобальную матрицу A
 	void AddToGlobalG(int i, int j, double add); // Добавление значения в глобальную матрицу G
 	void AddToGlobalM(int i, int j, double add); // Добавление значения в глобальную матрицу M
