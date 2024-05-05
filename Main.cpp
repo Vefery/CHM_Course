@@ -4,8 +4,8 @@
 
 int main()
 {
-    FEM system;
+    FEM fem;
 
-    system.Input();
-    system.Solve();
+    fem.Input();
+    fem.Solve();
 }

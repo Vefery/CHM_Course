@@ -170,6 +170,9 @@ void FEM::Solve()
 		slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
 		q.insert(q.end(), &slae.x[0], &slae.x[slae.n]);
 		//PrintSolution();
+		q_2 = q_1;
+		q_1 = q;
+		q.clear();
 	}
 }
 
