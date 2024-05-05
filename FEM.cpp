@@ -16,8 +16,12 @@ double FEM::Sigma(int vert, int region)
 
 double FEM::Function(int vert, int region, int tInd)
 {
-	// Зависит от конкретной задачи
-	return 2.0 * sin(vertices[vert].x+vertices[vert].y);
+	double x = vertices[vert].x;
+	double y = vertices[vert].y;
+	double t = timeStamps[vert];
+	double h = 1e-4;
+
+	return Sigma(vert, region) * ((Ug(x, y, t + h) - Ug(x, y, t)) / h) - Lamda(vert, region) * DivGrad(vert, tInd, h);
 }
 
 double FEM::Beta(int vert, int eqNum)
@@ -38,10 +42,14 @@ double FEM::Theta(int vert, int eqNum)
 	return NAN;
 }
 
-double FEM::Ug(int vert, int eqNum, int tInd)
+double FEM::Ug(int vert, int tInd)
 {
-	// Зависит от конкретной задачи
-	return sin(vertices[vert].y+1);
+	return Ug(vertices[vert].x, vertices[vert].y, timeStamps[tInd]);
+}
+
+double FEM::Ug(double x, double y, double t)
+{
+	return NAN;
 }
 
 void FEM::Input()
@@ -219,6 +227,18 @@ double FEM::EdgeLength(int vert1, int vert2)
 	double x = vertices[vert1].x - vertices[vert2].x;
 	double y = vertices[vert1].y - vertices[vert2].y;
 	return sqrt(x*x + y*y);
+}
+
+double FEM::DivGrad(int vert, int tInd, double h)
+{
+	double x = vertices[vert].x;
+	double y = vertices[vert].y;
+	double t = timeStamps[tInd];
+	double d2udx2 = (Ug(x - h, y, t) - 2 * Ug(x, y, t) + Ug(x + h, y, t)) / (h * h);
+	double d2udy2 = (Ug(x, y - h, t) - 2 * Ug(x, y, t) + Ug(x, y + h, t)) / (h * h);
+	double d2udt2 = (Ug(x, y, t - h) - 2 * Ug(x, y, t) + Ug(x, y, t + h)) / (h * h);
+
+	return d2udx2 + d2udy2 + d2udt2;
 }
 
 int FEM::IndexOfUnknown(Triangle tri, int i)

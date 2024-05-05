@@ -63,16 +63,19 @@ private:
 	double Beta(int vert, int eqNum); // Вычисление значения бета
 	double Ubeta(int vert, int eqNum); // Вычисление значения U бета для 3 краевого условия
 	double Theta(int vert, int eqNum); // Вычисление значения тета для 2 краевого условия
-	double Ug(int vert, int eqNum, int tInd); // Вычисление значения в узле для 1 краевого условия
+	double Ug(int vert, int tInd); // Вычисление значения в узле для 1 краевого условия
+	double Ug(double x, double y, double t);
 	double GetAverageLamda(Triangle tri); // Вычисление среднего лямбда на элементе
 	double GetAverageSigma(Triangle tri); // Вычисление среднего гамма на элементе
 	double DetD(Triangle tri); // Вычисление определителя D (удвоенной площади) элемента
 	double Alpha(Triangle tri, int k, int i);  // Вычисление значения альфа для построения матрицы G
 	double EdgeLength(int vert1, int vert2); // Вычисление длины ребра
+	double DivGrad(int vert, int tInd, double h);
 	int IndexOfUnknown(Triangle tri, int i); // Получение глобального номера узла из локального у элемента
 	void FormLocalM(Triangle tri); // Формирование матрицы G
 	void FormLocalG(Triangle tri); // Формирование матрицы M
 	void FormGlobalMatrices(int tInd); // Формирование глобальных M и G
+	void FormGlobalB(double deltaT, double deltaT0, double deltaT1);
 	void FormPortrait(); // Формирование портрета глобальной матрицы
 	void ResolveBoundaries(double t); // Учет всех краевых условий
 	void AddToGlobalA(int i, int j, double add); // Добавление значения в глобальную матрицу A
