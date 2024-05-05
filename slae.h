@@ -7,14 +7,14 @@ class SLAE {
 public:
 	int n, maxiter = 10000, nProfile = 0;
 	double  eps = 1e-13;
-	double* al, * au, * di;
+	double* al, * au, * diA;
 	double* alLU, * auLU, * diLU;
 	double* x, * x0, * b, * xtrue, * dP;
 	double* r, * z, * tmp1;
 	int* ia, * ja;
 
 	void Input(FILE* paramf, FILE* iaf, FILE* jaf, FILE* alf, FILE* auf, FILE* dif, FILE* bf);
-	void Input(int n, int maxiter, double eps, int* ig, int* jg, double* ggl, double* ggu, double* di, double* b);
+	void Input(int n, int maxiter, double eps, int* ig, int* jg, double* gglA, double* gguA, double* diA, double* b);
 
 	void MatrixVectorMultiplication(double* vectorMult, double* vectorOut) const;
 	void TransposedMatrixVectorMultiplication(double* vectorMult, double* vectorOut) const;

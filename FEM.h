@@ -58,23 +58,26 @@ private:
 	double localB[3]{}; // Локальный вектор b
 
 	double Lamda(int vert, int region); // Вычисление значения лямбда
-	double Gamma(int vert, int region); // Вычисление значения гамма
-	double Function(int vert, int region); // Вычисление значения функции f
+	double Sigma(int vert, int region); // Вычисление значения гамма
+	double Function(int vert, int region, int tInd); // Вычисление значения функции f
 	double Beta(int vert, int eqNum); // Вычисление значения бета
 	double Ubeta(int vert, int eqNum); // Вычисление значения U бета для 3 краевого условия
 	double Theta(int vert, int eqNum); // Вычисление значения тета для 2 краевого условия
-	double Ug(int vert, int eqNum); // Вычисление значения в узле для 1 краевого условия
+	double Ug(int vert, int eqNum, int tInd); // Вычисление значения в узле для 1 краевого условия
 	double GetAverageLamda(Triangle tri); // Вычисление среднего лямбда на элементе
-	double GetAverageGamma(Triangle tri); // Вычисление среднего гамма на элементе
+	double GetAverageSigma(Triangle tri); // Вычисление среднего гамма на элементе
 	double DetD(Triangle tri); // Вычисление определителя D (удвоенной площади) элемента
 	double Alpha(Triangle tri, int k, int i);  // Вычисление значения альфа для построения матрицы G
 	double EdgeLength(int vert1, int vert2); // Вычисление длины ребра
 	int IndexOfUnknown(Triangle tri, int i); // Получение глобального номера узла из локального у элемента
-	void FormM(Triangle tri); // Формирование матрицы G
-	void FormG(Triangle tri); // Формирование матрицы M
+	void FormLocalM(Triangle tri); // Формирование матрицы G
+	void FormLocalG(Triangle tri); // Формирование матрицы M
+	void FormGlobalMatrices(int tInd); // Формирование глобальных M и G
 	void FormPortrait(); // Формирование портрета глобальной матрицы
-	void ResolveBoundaries(); // Учет всех краевых условий
-	void AddToGlobal(int i, int j, double add); // Добавление значения в глобальную матрицу
+	void ResolveBoundaries(double t); // Учет всех краевых условий
+	void AddToGlobalA(int i, int j, double add); // Добавление значения в глобальную матрицу A
+	void AddToGlobalG(int i, int j, double add); // Добавление значения в глобальную матрицу G
+	void AddToGlobalM(int i, int j, double add); // Добавление значения в глобальную матрицу M
 	void AllocateGlobalMatrices(); // Выделение памяти для глобальной матрицы
-	void FormB(Triangle tri); // Формирование локального вектора b
+	void FormLocalB(Triangle tri, int tInd); // Формирование локального вектора b
 };

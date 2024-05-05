@@ -8,13 +8,13 @@ double FEM::Lamda(int vert, int region)
 	return 1.0;
 }
 
-double FEM::Gamma(int vert, int region)
+double FEM::Sigma(int vert, int region)
 {
 	// Зависит от конкретной задачи
 	return 0.0;
 }
 
-double FEM::Function(int vert, int region)
+double FEM::Function(int vert, int region, int tInd)
 {
 	// Зависит от конкретной задачи
 	return 2.0 * sin(vertices[vert].x+vertices[vert].y);
@@ -38,7 +38,7 @@ double FEM::Theta(int vert, int eqNum)
 	return NAN;
 }
 
-double FEM::Ug(int vert, int eqNum)
+double FEM::Ug(int vert, int eqNum, int tInd)
 {
 	// Зависит от конкретной задачи
 	return sin(vertices[vert].y+1);
@@ -138,22 +138,9 @@ void FEM::Solve()
 		deltaT = timeStamps[j] - timeStamps[j - 2];
 		deltaT1 = timeStamps[j - 1] - timeStamps[j - 2];
 		deltaT0 = timeStamps[j] - timeStamps[j - 1];
-		for (int r = 0; r < regionsNum; r++)
-		{
-			Triangle currTri = tris[r];
-			FormG(currTri);
-			FormM(currTri);
-			FormB(currTri);
-			int globalBasis[3] = { currTri.vert1, currTri.vert2, currTri.vert3 };
-			for (int i = 0; i < 3; i++)
-			{
-				b[globalBasis[i]] += localB[i];
-				for (int k = 0; k < 3; k++)
-					AddToGlobal(globalBasis[i], globalBasis[k], ((deltaT + deltaT0) / (deltaT * deltaT0)) * M[i][k]);
-			}
-		}
+		
+		ResolveBoundaries(timeStamps[j]);
 	}
-	ResolveBoundaries();
 
 	SLAE slae;
 	slae.Input(globalN, 100000, 1e-15, ig.data(), jg.data(), gglA.data(), gguA.data(), diA.data(), b.data());
@@ -173,9 +160,9 @@ double FEM::GetAverageLamda(Triangle tri)
 	return (Lamda(tri.vert1, tri.region) + Lamda(tri.vert2, tri.region) + Lamda(tri.vert3, tri.region)) / 3.0;
 }
 
-double FEM::GetAverageGamma(Triangle tri)
+double FEM::GetAverageSigma(Triangle tri)
 {
-	return (Gamma(tri.vert1, tri.region) + Gamma(tri.vert2, tri.region) + Gamma(tri.vert3, tri.region)) / 3.0;
+	return (Sigma(tri.vert1, tri.region) + Sigma(tri.vert2, tri.region) + Sigma(tri.vert3, tri.region)) / 3.0;
 }
 
 double FEM::DetD(Triangle tri)
@@ -238,10 +225,10 @@ int FEM::IndexOfUnknown(Triangle tri, int i)
 	}
 }
 
-void FEM::FormM(Triangle tri)
+void FEM::FormLocalM(Triangle tri)
 {
 	std::copy(&pureM[0][0], &pureM[0][0] + 9, &M[0][0]);
-	double factor = (GetAverageGamma(tri) * fabs(DetD(tri))) / 24.0;
+	double factor = (GetAverageSigma(tri) * fabs(DetD(tri))) / 24.0;
 	for (int i = 0; i < 3; i++)
 	{
 		for (int j = 0; j < 3; j++)
@@ -249,7 +236,7 @@ void FEM::FormM(Triangle tri)
 	}
 }
 
-void FEM::FormG(Triangle tri)
+void FEM::FormLocalG(Triangle tri)
 {
 	double factor = 1.0 / (fabs(DetD(tri)) * 6.0);
 
@@ -266,9 +253,28 @@ void FEM::FormG(Triangle tri)
 	}
 }
 
+void FEM::FormGlobalMatrices(int tInd)
+{
+	for (int r = 0; r < regionsNum; r++)
+	{
+		Triangle currTri = tris[r];
+		FormLocalG(currTri);
+		FormLocalM(currTri);
+		FormLocalB(currTri, tInd);
+		int globalBasis[3] = { currTri.vert1, currTri.vert2, currTri.vert3 };
+		for (int i = 0; i < 3; i++)
+		{
+			b[globalBasis[i]] += localB[i];
+			for (int j = 0; j < 3; j++) {
+				AddToGlobalG(globalBasis[i], globalBasis[j], G[i][j]);
+				AddToGlobalM(globalBasis[i], globalBasis[j], M[i][j]);
+			}
+		}
+	}
+}
+
 void FEM::FormPortrait()
 {
-	//ig = new int[globalN + 1];
 	ig.resize(globalN + 1);
 	int* list[2]{};
 	list[0] = new int[2 * globalN * (globalN - 2)];
@@ -322,7 +328,6 @@ void FEM::FormPortrait()
 		}
 	}
 
-	//jg = new int[listsize + 1];
 	jg.resize(listsize + 1);
 	ig[0] = 0;
 	for (int i = 0; i < globalN; i++)
@@ -340,7 +345,7 @@ void FEM::FormPortrait()
 	delete[] listbeg;
 }
 
-void FEM::ResolveBoundaries()
+void FEM::ResolveBoundaries(double t)
 {
 	// Учет 3 краевых
 	const double localA[2][2] = { {2.0, 1.0}, {1.0, 2.0} };
@@ -355,7 +360,7 @@ void FEM::ResolveBoundaries()
 		for (int i = 0; i < 2; i++)
 		{
 			for (int j = 0; j < 2; j++)
-				AddToGlobal(globalBasis[i], globalBasis[j], localA[i][j] * factor);
+				AddToGlobalA(globalBasis[i], globalBasis[j], localA[i][j] * factor);
 		}
 	}
 	// Учет 2 краевых
@@ -371,7 +376,7 @@ void FEM::ResolveBoundaries()
 	for (int i = 0; i < firstBoundary.size(); i++)
 	{
 		FirstBoundaryCondition temp = firstBoundary[i];
-		b[temp.vert] = Ug(temp.vert, temp.equationNum);
+		b[temp.vert] = Ug(temp.vert, temp.equationNum, t);
 
 		diA[temp.vert] = 1;
 		for (int k = ig[temp.vert]; k < ig[temp.vert + 1]; k++) {
@@ -395,7 +400,7 @@ void FEM::ResolveBoundaries()
 	}
 }
 
-void FEM::AddToGlobal(int i, int j, double add)
+void FEM::AddToGlobalA(int i, int j, double add)
 {
 	if (i == j)
 		diA[i] += add;
@@ -419,6 +424,54 @@ void FEM::AddToGlobal(int i, int j, double add)
 	}
 }
 
+void FEM::AddToGlobalG(int i, int j, double add)
+{
+	if (i == j)
+		diG[i] += add;
+	else if (i < j) {
+		int ind;
+		for (ind = ig[j]; ind < ig[j + 1]; ind++)
+		{
+			if (jg[ind] == i)
+				break;
+		}
+		gguG[ind] += add;
+	}
+	else {
+		int ind;
+		for (ind = ig[i]; ind < ig[i + 1]; ind++)
+		{
+			if (jg[ind] == j)
+				break;
+		}
+		gglG[ind] += add;
+	}
+}
+
+void FEM::AddToGlobalM(int i, int j, double add)
+{
+	if (i == j)
+		diM[i] += add;
+	else if (i < j) {
+		int ind;
+		for (ind = ig[j]; ind < ig[j + 1]; ind++)
+		{
+			if (jg[ind] == i)
+				break;
+		}
+		gguM[ind] += add;
+	}
+	else {
+		int ind;
+		for (ind = ig[i]; ind < ig[i + 1]; ind++)
+		{
+			if (jg[ind] == j)
+				break;
+		}
+		gglM[ind] += add;
+	}
+}
+
 void FEM::AllocateGlobalMatrices()
 {
 	diA.resize(globalN);
@@ -434,11 +487,11 @@ void FEM::AllocateGlobalMatrices()
 	gguG.resize(ig[globalN] - ig[0]);
 }
 
-void FEM::FormB(Triangle tri)
+void FEM::FormLocalB(Triangle tri, int tInd)
 {
 	double factor = fabs(DetD(tri)) / 24.0;
 
-	localB[0] = factor * (2.0 * Function(tri.vert1, tri.region) + Function(tri.vert2, tri.region) + Function(tri.vert3, tri.region));
-	localB[1] = factor * (Function(tri.vert1, tri.region) + 2.0 * Function(tri.vert2, tri.region) + Function(tri.vert3, tri.region));
-	localB[2] = factor * (Function(tri.vert1, tri.region) + Function(tri.vert2, tri.region) + 2.0 * Function(tri.vert3, tri.region));
+	localB[0] = factor * (2.0 * Function(tri.vert1, tri.region, tInd) + Function(tri.vert2, tri.region, tInd) + Function(tri.vert3, tri.region, tInd));
+	localB[1] = factor * (Function(tri.vert1, tri.region, tInd) + 2.0 * Function(tri.vert2, tri.region, tInd) + Function(tri.vert3, tri.region, tInd));
+	localB[2] = factor * (Function(tri.vert1, tri.region, tInd) + Function(tri.vert2, tri.region, tInd) + 2.0 * Function(tri.vert3, tri.region, tInd));
 }
