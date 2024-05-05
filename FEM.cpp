@@ -70,7 +70,12 @@ void FEM::Input()
 		vertices.push_back(tempVert);
 	}
 	fclose(file);
-
+	// Считываем q0
+	fopen_s(&file, "q0.txt", "r");
+	q_2.resize(globalN);
+	for (int i = 0; i < globalN; i++)
+		fscanf_s(file, "%lf", &q_2[i]);
+	fclose(file);
 	// Считывание треугольников
 	fopen_s(&file, "Triangles.txt", "r");
 
@@ -130,6 +135,7 @@ void FEM::Input()
 
 void FEM::Solve()
 {
+	SLAE slae;
 	FormPortrait();
 	AllocateGlobalMatrices();
 	for (int j = 2; j < timeStamps.size(); j++)
@@ -138,15 +144,20 @@ void FEM::Solve()
 		deltaT = timeStamps[j] - timeStamps[j - 2];
 		deltaT1 = timeStamps[j - 1] - timeStamps[j - 2];
 		deltaT0 = timeStamps[j] - timeStamps[j - 1];
-		
-		ResolveBoundaries(timeStamps[j]);
-	}
+		FormGlobalMatrices(j);
+		// Формирую глобальную A
+		double factor = (deltaT + deltaT0) / (deltaT * deltaT0);
+		for (int i = 0; i < ig[globalN]; i++)
+			diA[i] = factor * diM[i];
+		// Формирую правую часть
+		FormGlobalB(deltaT, deltaT0, deltaT1);
 
-	SLAE slae;
-	slae.Input(globalN, 100000, 1e-15, ig.data(), jg.data(), gglA.data(), gguA.data(), diA.data(), b.data());
-	slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
-	q.insert(q.end(), &slae.x[0], &slae.x[slae.n]);
-	PrintSolution();
+		ResolveBoundaries(timeStamps[j]);
+		slae.Input(globalN, 100000, 1e-15, ig.data(), jg.data(), gglA.data(), gguA.data(), diA.data(), b.data());
+		slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
+		q.insert(q.end(), &slae.x[0], &slae.x[slae.n]);
+		PrintSolution();
+	}
 }
 
 void FEM::PrintSolution()
@@ -260,7 +271,7 @@ void FEM::FormGlobalMatrices(int tInd)
 		Triangle currTri = tris[r];
 		FormLocalG(currTri);
 		FormLocalM(currTri);
-		FormLocalB(currTri, tInd);
+		FormLocalB(currTri, tInd - 1);
 		int globalBasis[3] = { currTri.vert1, currTri.vert2, currTri.vert3 };
 		for (int i = 0; i < 3; i++)
 		{
@@ -270,6 +281,40 @@ void FEM::FormGlobalMatrices(int tInd)
 				AddToGlobalM(globalBasis[i], globalBasis[j], M[i][j]);
 			}
 		}
+	}
+}
+
+void FEM::FormGlobalB(double deltaT, double deltaT0, double deltaT1)
+{
+	vector<double> temp1, temp2;
+	double factor1 = deltaT / (deltaT1 * deltaT0);
+	double factor2 = deltaT0 / (deltaT * deltaT1);
+	// Тут умножение factor1*M-G на q(j-1)
+	for (int i = 0; i < globalN; i++)
+	{
+		temp1[i] = (factor1 * diM[i] - diG[i]) * q_1[i];
+		for (int k = ig[i]; k < ig[i + 1]; k++)
+		{
+			int j = jg[k];
+			temp1[i] += (factor1 * gglM[k] - gglG[k]) * q_1[j];
+			temp1[j] += (factor1 * gguM[k] - gguG[k]) * q_1[i];
+		}
+	}
+	// Тут умножение factor2*M на q(j-2)
+	for (int i = 0; i < globalN; i++)
+	{
+		temp1[i] = (factor2 * diM[i]) * q_2[i];
+		for (int k = ig[i]; k < ig[i + 1]; k++)
+		{
+			int j = jg[k];
+			temp1[i] += (factor2 * gglM[k]) * q_2[j];
+			temp1[j] += (factor2 * gguM[k]) * q_2[i];
+		}
+	}
+	// Финализация правой части
+	for (int i = 0; i < globalN; i++)
+	{
+		b[i] += temp1[i] - temp2[i];
 	}
 }
 
