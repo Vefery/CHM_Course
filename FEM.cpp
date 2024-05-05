@@ -46,10 +46,18 @@ double FEM::Ug(int vert, int eqNum)
 
 void FEM::Input()
 {
-	// Считывание узлов
 	FILE* file;
 	fopen_s(&file, "Vertices.txt", "r");
-
+	// Считывание временной шкалы
+	double tStart, tEnd;
+	int tIntervalNum;
+	fscanf_s(file, "%lf %d %lf", &tStart, &tIntervalNum, &tEnd);
+	double tStep = (tEnd - tStart) / tIntervalNum;
+	timeStamps.reserve(tIntervalNum + 1);
+	for (int i = 0; i < tIntervalNum; i++)
+		timeStamps.push_back(tStart + tStep * i);
+	timeStamps.push_back(tEnd);
+	// Считывание узлов
 	int num;
 	fscanf_s(file, "%d", &num);
 	Vertex tempVert{};
@@ -123,29 +131,35 @@ void FEM::Input()
 void FEM::Solve()
 {
 	FormPortrait();
-	AllocateGlobalMatrix();
-	for (int i = 0; i < regionsNum; i++)
+	AllocateGlobalMatrices();
+	for (int j = 2; j < timeStamps.size(); j++)
 	{
-		Triangle currTri = tris[i];
-		FormG(currTri);
-		FormM(currTri);
-		FormB(currTri);
-		int globalBasis[3] = { currTri.vert1, currTri.vert2, currTri.vert3 };
-		for (int j = 0; j < 3; j++)
+		double deltaT, deltaT0, deltaT1;
+		deltaT = timeStamps[j] - timeStamps[j - 2];
+		deltaT1 = timeStamps[j - 1] - timeStamps[j - 2];
+		deltaT0 = timeStamps[j] - timeStamps[j - 1];
+		for (int r = 0; r < regionsNum; r++)
 		{
-			b[globalBasis[j]] += localB[j];
-			for (int k = 0; k < 3; k++)
-				AddToGlobal(globalBasis[j], globalBasis[k], G[j][k] + M[j][k]);
+			Triangle currTri = tris[r];
+			FormG(currTri);
+			FormM(currTri);
+			FormB(currTri);
+			int globalBasis[3] = { currTri.vert1, currTri.vert2, currTri.vert3 };
+			for (int i = 0; i < 3; i++)
+			{
+				b[globalBasis[i]] += localB[i];
+				for (int k = 0; k < 3; k++)
+					AddToGlobal(globalBasis[i], globalBasis[k], ((deltaT + deltaT0) / (deltaT * deltaT0)) * M[i][k]);
+			}
 		}
 	}
 	ResolveBoundaries();
 
 	SLAE slae;
-	slae.Input(globalN, 100000, 1e-30, ig, jg, ggl, ggu, di, b);
+	slae.Input(globalN, 100000, 1e-15, ig.data(), jg.data(), gglA.data(), gguA.data(), diA.data(), b.data());
 	slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
-	q = slae.x;
+	q.insert(q.end(), &slae.x[0], &slae.x[slae.n]);
 	PrintSolution();
-	FreeMemory();
 }
 
 void FEM::PrintSolution()
@@ -254,7 +268,8 @@ void FEM::FormG(Triangle tri)
 
 void FEM::FormPortrait()
 {
-	ig = new int[globalN + 1];
+	//ig = new int[globalN + 1];
+	ig.resize(globalN + 1);
 	int* list[2]{};
 	list[0] = new int[2 * globalN * (globalN - 2)];
 	list[1] = new int[2 * globalN * (globalN - 2)];
@@ -307,7 +322,8 @@ void FEM::FormPortrait()
 		}
 	}
 
-	jg = new int[listsize + 1];
+	//jg = new int[listsize + 1];
+	jg.resize(listsize + 1);
 	ig[0] = 0;
 	for (int i = 0; i < globalN; i++)
 	{
@@ -357,9 +373,9 @@ void FEM::ResolveBoundaries()
 		FirstBoundaryCondition temp = firstBoundary[i];
 		b[temp.vert] = Ug(temp.vert, temp.equationNum);
 
-		di[temp.vert] = 1;
+		diA[temp.vert] = 1;
 		for (int k = ig[temp.vert]; k < ig[temp.vert + 1]; k++) {
-			ggl[k] = 0;
+			gglA[k] = 0;
 		}
 		for (int k = 0; k < globalN; k++)
 		{
@@ -374,7 +390,7 @@ void FEM::ResolveBoundaries()
 
 			}
 			if (exist)
-				ggu[ind] = 0;
+				gguA[ind] = 0;
 		}
 	}
 }
@@ -382,7 +398,7 @@ void FEM::ResolveBoundaries()
 void FEM::AddToGlobal(int i, int j, double add)
 {
 	if (i == j)
-		di[i] += add;
+		diA[i] += add;
 	else if (i < j) {
 		int ind;
 		for (ind = ig[j]; ind < ig[j + 1]; ind++)
@@ -390,7 +406,7 @@ void FEM::AddToGlobal(int i, int j, double add)
 			if (jg[ind] == i)
 				break;
 		}
-		ggu[ind] += add;
+		gguA[ind] += add;
 	}
 	else {
 		int ind;
@@ -399,27 +415,23 @@ void FEM::AddToGlobal(int i, int j, double add)
 			if (jg[ind] == j)
 				break;
 		}
-		ggl[ind] += add;
+		gglA[ind] += add;
 	}
 }
 
-void FEM::AllocateGlobalMatrix()
+void FEM::AllocateGlobalMatrices()
 {
-	di = new double[globalN]();
-	b = new double[globalN]();
+	diA.resize(globalN);
+	diM.resize(globalN);
+	diG.resize(globalN);
+	b.resize(globalN);
 
-	ggl = new double[ig[globalN] - ig[0]]();
-	ggu = new double[ig[globalN] - ig[0]]();
-}
-
-void FEM::FreeMemory() 
-{
-	delete[] di;
-	delete[] b;
-	delete[] ggl;
-	delete[] ggu;
-	delete[] ig;
-	delete[] jg;
+	gglA.resize(ig[globalN] - ig[0]);
+	gguA.resize(ig[globalN] - ig[0]);
+	gglM.resize(ig[globalN] - ig[0]);
+	gguM.resize(ig[globalN] - ig[0]);
+	gglG.resize(ig[globalN] - ig[0]);
+	gguG.resize(ig[globalN] - ig[0]);
 }
 
 void FEM::FormB(Triangle tri)

@@ -41,15 +41,17 @@ public:
 	vector<FirstBoundaryCondition> firstBoundary; // Первые краевые условия
 	vector<SecondBoundaryCondition> secondBoundary; // Вторые краевые условия
 	vector<ThirdBoundaryCondition> thirdBoundary; // Третьи краевые условия
-	double* q; // Вектор решения
+	vector<double> timeStamps; // Узлы по времени
+	vector<double> q; // Вектор решения
+	vector<double> q_1, q_2; // Предыдущие векторы q(j-1) and q(j-2)
 
 	void Input(); // Ввод данных из файла
 	void Solve(); // Общая функция запуска решения
 	void PrintSolution();
 private:
 	int regionsNum, globalN; // Количество областей и узлов
-	int* ig, * jg; // Глобальная матрица
-	double* ggl, * ggu, * di, * b;
+	vector<int> ig, jg; // Глобальная матрица
+	vector<double> gglA, gguA, diA, gglM, gguM, diM, gglG, gguG, diG, b;
 	double G[3][3]{}; // Пустая матрица G
 	double M[3][3]{}; // Пустая матрица M
 	const double pureM[3][3] = { {2, 1, 1}, {1, 2, 1}, {1, 1, 2} }; // Шаблон матрицы M для возвращения ее в исходное состояние на каждой итерации
@@ -73,7 +75,6 @@ private:
 	void FormPortrait(); // Формирование портрета глобальной матрицы
 	void ResolveBoundaries(); // Учет всех краевых условий
 	void AddToGlobal(int i, int j, double add); // Добавление значения в глобальную матрицу
-	void AllocateGlobalMatrix(); // Выделение памяти для глобальной матрицы
-	void FreeMemory();
+	void AllocateGlobalMatrices(); // Выделение памяти для глобальной матрицы
 	void FormB(Triangle tri); // Формирование локального вектора b
 };
