@@ -172,11 +172,11 @@ void FEM::Solve()
 	for (int i = 0; i < globalN; i++)
 		q_2[i] = Ug(vertices[i].x, vertices[i].y, timeStamps[0]);
 
-	// Временная мера
-	q_1 = { 0,4,10,6,5 };
-	//
 	FormPortrait();
 	AllocateGlobalMatrices();
+	// Двухслойка для разгона
+	TwoLayerScheme();
+
 	for (int j = 2; j < timeStamps.size(); j++)
 	{
 		double deltaT, deltaT0, deltaT1;
@@ -623,4 +623,45 @@ void FEM::FormLocalB(Triangle tri, int tInd)
 	localB[0] = factor * (2.0 * Function(tri.vert1, tri.region, tInd) + Function(tri.vert2, tri.region, tInd) + Function(tri.vert3, tri.region, tInd));
 	localB[1] = factor * (Function(tri.vert1, tri.region, tInd) + 2.0 * Function(tri.vert2, tri.region, tInd) + Function(tri.vert3, tri.region, tInd));
 	localB[2] = factor * (Function(tri.vert1, tri.region, tInd) + Function(tri.vert2, tri.region, tInd) + 2.0 * Function(tri.vert3, tri.region, tInd));
+}
+
+void FEM::TwoLayerScheme()
+{
+	SLAE slae;
+	double deltaT;
+	deltaT = timeStamps[1] - timeStamps[0];
+	FormGlobalMatrices(1);
+	// Формирую глобальную A
+	double factor = 1.0 / deltaT;
+	// По хорошему тут надо еще Ms3 учесть с фактором сразу
+	for (int i = 0; i < ig[globalN]; i++) {
+		gglA[i] = factor * gglM[i];
+		gguA[i] = factor * gguM[i];
+	}
+	for (int i = 0; i < globalN; i++)
+		diA[i] = factor * diM[i];
+	// Формирую правую часть
+	vector<double> temp;
+	temp.resize(globalN);
+	// Тут умножение factor*M-G на q(j-2)
+	for (int i = 0; i < globalN; i++)
+	{
+		temp[i] = (factor * diM[i] - diG[i]) * q_2[i];
+		for (int k = ig[i]; k < ig[i + 1]; k++)
+		{
+			int j = jg[k];
+			temp[i] += (factor * gglM[k] - gglG[k]) * q_2[j];
+			temp[j] += (factor * gguM[k] - gguG[k]) * q_2[i];
+		}
+	}
+	// Финализация правой части
+	for (int i = 0; i < globalN; i++)
+	{
+		b[i] = pureB[i] + temp[i];
+	}
+
+	ResolveBoundaries(1);
+	slae.Input(globalN, 100000, 1e-15, ig.data(), jg.data(), gglA.data(), gguA.data(), diA.data(), b.data());
+	slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
+	q_1.insert(q_1.end(), &slae.x[0], &slae.x[slae.n]);
 }

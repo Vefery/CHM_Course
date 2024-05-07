@@ -85,4 +85,5 @@ private:
 	void AddToGlobalM(int i, int j, double add); // Добавление значения в глобальную матрицу M
 	void AllocateGlobalMatrices(); // Выделение памяти для глобальной матрицы
 	void FormLocalB(Triangle tri, int tInd); // Формирование локального вектора b
+	void TwoLayerScheme(); // Двухслойка для разгона
 };
