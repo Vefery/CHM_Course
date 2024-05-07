@@ -65,12 +65,14 @@ private:
 	double Theta(int vert, int eqNum); // Вычисление значения тета для 2 краевого условия
 	double Ug(int vert, int tInd); // Вычисление значения в узле для 1 краевого условия
 	double Ug(double x, double y, double t);
+	double Uq(double x, double y, Triangle tri, vector<double> resQ);
 	double GetAverageLamda(Triangle tri); // Вычисление среднего лямбда на элементе
 	double GetAverageSigma(Triangle tri); // Вычисление среднего гамма на элементе
 	double DetD(Triangle tri); // Вычисление определителя D (удвоенной площади) элемента
 	double Alpha(Triangle tri, int k, int i);  // Вычисление значения альфа для построения матрицы G
 	double EdgeLength(int vert1, int vert2); // Вычисление длины ребра
 	double DivGrad(int vert, int tInd, double h);
+	double CalcNorm(vector<double> resQ, int tInd);
 	int IndexOfUnknown(Triangle tri, int i); // Получение глобального номера узла из локального у элемента
 	void FormLocalM(Triangle tri); // Формирование матрицы G
 	void FormLocalG(Triangle tri); // Формирование матрицы M

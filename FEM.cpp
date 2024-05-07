@@ -52,6 +52,36 @@ double FEM::Ug(double x, double y, double t)
 	return 2 * x * t + 3 * y * t;
 }
 
+double FEM::Uq(double x, double y, Triangle tri, vector<double> resQ)
+{
+	double res = 0.0;
+
+	double x0 = vertices[tri.vert1].x;
+	double x1 = vertices[tri.vert2].x;
+	double x2 = vertices[tri.vert3].x;
+
+	double y0 = vertices[tri.vert1].y;
+	double y1 = vertices[tri.vert2].y;
+	double y2 = vertices[tri.vert3].y;
+
+	auto S = [&](double x, double y, Vertex vert1, Vertex vert2) -> double { 
+		return abs((vert2.x - vert1.x) * (y - vert1.y) - (x - vert1.x) * (vert2.y - vert1.y)); 
+		};
+
+	double detD = abs(DetD(tri));
+	double L1 = (S(x, y, vertices[tri.vert2], vertices[tri.vert3])) / detD;
+	double L2 = (S(x, y, vertices[tri.vert3], vertices[tri.vert1])) / detD;
+	double L3 = (S(x, y, vertices[tri.vert1], vertices[tri.vert2])) / detD;
+
+	res += resQ[tri.vert1] * L1;
+	res += resQ[tri.vert2] * L2;
+	res += resQ[tri.vert3] * L3;
+
+	return res;
+}
+
+
+
 void FEM::Input()
 {
 	FILE* file;
@@ -169,7 +199,7 @@ void FEM::Solve()
 		slae.Input(globalN, 100000, 1e-15, ig.data(), jg.data(), gglA.data(), gguA.data(), diA.data(), b.data());
 		slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
 		q.insert(q.end(), &slae.x[0], &slae.x[slae.n]);
-		//PrintSolution();
+		cout << "T = " << timeStamps[j] << " error: " << scientific << CalcNorm(q, j) << endl;
 		q_2 = q_1;
 		q_1 = q;
 		q.clear();
@@ -247,6 +277,29 @@ double FEM::DivGrad(int vert, int tInd, double h)
 	double d2udt2 = (Ug(x, y, t - h) - 2 * Ug(x, y, t) + Ug(x, y, t + h)) / (h * h);
 
 	return d2udx2 + d2udy2 + d2udt2;
+}
+
+double FEM::CalcNorm(vector<double> resQ, int tInd)
+{
+	double res = 0;
+	for (int r = 0; r < tris.size(); r++)
+	{
+		Triangle curTri = tris[r];
+		double x0 = vertices[curTri.vert1].x;
+		double x1 = vertices[curTri.vert2].x;
+		double x2 = vertices[curTri.vert3].x;
+
+		double y0 = vertices[curTri.vert1].y;
+		double y1 = vertices[curTri.vert2].y;
+		double y2 = vertices[curTri.vert3].y;
+
+		double x = (x0 + x1 + x2) / 3.0;
+		double y = (y0 + y1 + y2) / 3.0;
+		double J = DetD(curTri) / 4.0; // ПЕРЕДЕЛАТЬ, ТУТ НЕ ПРАВИЛЬНО
+		double f = std::pow(Uq(x, y, curTri, resQ) - Ug(x, y, timeStamps[tInd]), 2.0);
+		res += J * f;
+	}
+	return res;
 }
 
 int FEM::IndexOfUnknown(Triangle tri, int i)
