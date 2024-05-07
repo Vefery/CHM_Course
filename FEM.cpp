@@ -18,7 +18,7 @@ double FEM::Function(int vert, int region, int tInd)
 {
 	double x = vertices[vert].x;
 	double y = vertices[vert].y;
-	double t = timeStamps[vert];
+	double t = timeStamps[tInd];
 	double h = 1e-4;
 
 	return Sigma(vert, region) * ((Ug(x, y, t + h) - Ug(x, y, t)) / h) - Lamda(vert, region) * DivGrad(vert, tInd, h);
@@ -49,7 +49,7 @@ double FEM::Ug(int vert, int tInd)
 
 double FEM::Ug(double x, double y, double t)
 {
-	return 2 * x * t + 3 * y * t;
+	return 2 * x * x * t + 3 * y * y * t;
 }
 
 double FEM::Uq(double x, double y, Triangle tri, vector<double> resQ)
@@ -295,9 +295,9 @@ double FEM::CalcNorm(vector<double> resQ, int tInd)
 
 		double x = (x0 + x1 + x2) / 3.0;
 		double y = (y0 + y1 + y2) / 3.0;
-		double J = DetD(curTri) / 4.0; // ПЕРЕДЕЛАТЬ, ТУТ НЕ ПРАВИЛЬНО
+		double J = abs(DetD(curTri));
 		double f = std::pow(Uq(x, y, curTri, resQ) - Ug(x, y, timeStamps[tInd]), 2.0);
-		res += J * f;
+		res += 0.5 * J * f;
 	}
 	return res;
 }
