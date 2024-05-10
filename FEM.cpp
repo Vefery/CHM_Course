@@ -19,10 +19,20 @@ double FEM::Function(int vert, int region, int tInd)
 	double x = vertices[vert].x;
 	double y = vertices[vert].y;
 	double t = timeStamps[tInd];
-	double h = 1e-4;
+	double h = 1e-5;
 
-	return Sigma(vert, region) * ((Ug(x, y, t + h * h) - Ug(x, y, t)) / (h * h)) - Lamda(vert, region) * DivGrad(vert, tInd, h);
-	//return 2 * t;
+	if (tInd < 2)
+		return Sigma(vert, region) * ((Ug(x, y, t + h * h) - Ug(x, y, t)) / (h * h)) - Lamda(vert, region) * DivGrad(vert, tInd, h);
+	else {
+		double deltaT = timeStamps[tInd] - timeStamps[tInd - 2];
+		double deltaT1 = timeStamps[tInd - 1] - timeStamps[tInd - 2];
+		double deltaT0 = timeStamps[tInd] - timeStamps[tInd - 1];
+		double factor1 = deltaT0 / (deltaT * deltaT1);
+		double factor2 = deltaT / (deltaT1 * deltaT0);
+		double factor3 = (deltaT + deltaT0) / (deltaT * deltaT0);
+
+		return factor1 * Ug(x, y, timeStamps[tInd - 2]) - factor2 * Ug(x, y, timeStamps[tInd - 1]) + factor3 * Ug(x, y, t) - Lamda(vert, region) * DivGrad(vert, tInd, h);
+	}
 }
 
 double FEM::Beta(int vert, int eqNum)
@@ -50,7 +60,7 @@ double FEM::Ug(int vert, int tInd)
 
 double FEM::Ug(double x, double y, double t)
 {
-	return x + y + t;
+	return x + y + t * t;
 }
 
 double FEM::Uq(double x, double y, Triangle tri, vector<double> resQ)
@@ -176,7 +186,6 @@ void FEM::Solve()
 	AllocateGlobalMatrices();
 	// Двухслойка для разгона
 	TwoLayerScheme();
-	//q_1 = { 0.015625, 1.015625, 2.015625, 1.015625, 1.015625 };
 
 	for (int j = 2; j < timeStamps.size(); j++)
 	{
@@ -184,6 +193,7 @@ void FEM::Solve()
 		deltaT = timeStamps[j] - timeStamps[j - 2];
 		deltaT1 = timeStamps[j - 1] - timeStamps[j - 2];
 		deltaT0 = timeStamps[j] - timeStamps[j - 1];
+		ClearMatrices();
 		FormGlobalMatrices(j);
 		// Формирую глобальную A
 		double factor = (deltaT + deltaT0) / (deltaT * deltaT0);
@@ -354,7 +364,7 @@ void FEM::FormGlobalMatrices(int tInd)
 		Triangle currTri = tris[r];
 		FormLocalG(currTri);
 		FormLocalM(currTri);
-		FormLocalB(currTri, tInd - 1);
+		FormLocalB(currTri, tInd);
 		int globalBasis[3] = { currTri.vert1, currTri.vert2, currTri.vert3 };
 		for (int i = 0; i < 3; i++)
 		{
@@ -666,4 +676,19 @@ void FEM::TwoLayerScheme()
 	slae.Input(globalN, 100000, 1e-15, ig.data(), jg.data(), gglA.data(), gguA.data(), diA.data(), b.data());
 	slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
 	q_1.insert(q_1.end(), &slae.x[0], &slae.x[slae.n]);
+}
+
+void FEM::ClearMatrices()
+{
+	fill(diA.begin(), diA.end(), 0);
+	fill(diM.begin(), diM.end(), 0);
+	fill(diG.begin(), diG.end(), 0);
+	fill(pureB.begin(), pureB.end(), 0);
+
+	fill(gglA.begin(), gglA.end(), 0);
+	fill(gguA.begin(), gguA.end(), 0);
+	fill(gglM.begin(), gglM.end(), 0);
+	fill(gguM.begin(), gguM.end(), 0);
+	fill(gglG.begin(), gglG.end(), 0);
+	fill(gguG.begin(), gguG.end(), 0);
 }

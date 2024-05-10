@@ -89,4 +89,5 @@ private:
 	void AllocateGlobalMatrices(); // Выделение памяти для глобальной матрицы
 	void FormLocalB(Triangle tri, int tInd); // Формирование локального вектора b
 	void TwoLayerScheme(); // Двухслойка для разгона
+	void ClearMatrices();
 };
