@@ -21,7 +21,8 @@ double FEM::Function(int vert, int region, int tInd)
 	double t = timeStamps[tInd];
 	double h = 1e-4;
 
-	return Sigma(vert, region) * ((Ug(x, y, t + h) - Ug(x, y, t)) / h) - Lamda(vert, region) * DivGrad(vert, tInd, h);
+	return Sigma(vert, region) * ((Ug(x, y, t + h * h) - Ug(x, y, t)) / (h * h)) - Lamda(vert, region) * DivGrad(vert, tInd, h);
+	//return 2 * t;
 }
 
 double FEM::Beta(int vert, int eqNum)
@@ -49,7 +50,7 @@ double FEM::Ug(int vert, int tInd)
 
 double FEM::Ug(double x, double y, double t)
 {
-	return 2 * x * x * t + 3 * y * y * t;
+	return x + y + t;
 }
 
 double FEM::Uq(double x, double y, Triangle tri, vector<double> resQ)
@@ -87,10 +88,10 @@ void FEM::Input()
 	FILE* file;
 	fopen_s(&file, "Vertices.txt", "r");
 	// Считывание временной шкалы
-	double tStart, tEnd;
-	int tIntervalNum;
-	fscanf_s(file, "%lf %d %lf", &tStart, &tIntervalNum, &tEnd);
-	double tStep = (tEnd - tStart) / tIntervalNum;
+	double tStart, tEnd, tStep;
+
+	fscanf_s(file, "%lf %lf %lf", &tStart, &tStep, &tEnd);
+	int tIntervalNum = (tEnd - tStart) / tStep;
 	timeStamps.reserve(tIntervalNum + 1);
 	for (int i = 0; i < tIntervalNum; i++)
 		timeStamps.push_back(tStart + tStep * i);
@@ -162,7 +163,6 @@ void FEM::Input()
 		}
 	}
 	fclose(file);
-	delete file;
 }
 
 void FEM::Solve()
@@ -176,6 +176,7 @@ void FEM::Solve()
 	AllocateGlobalMatrices();
 	// Двухслойка для разгона
 	TwoLayerScheme();
+	//q_1 = { 0.015625, 1.015625, 2.015625, 1.015625, 1.015625 };
 
 	for (int j = 2; j < timeStamps.size(); j++)
 	{
@@ -200,6 +201,7 @@ void FEM::Solve()
 		slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
 		q.insert(q.end(), &slae.x[0], &slae.x[slae.n]);
 		cout << "T = " << timeStamps[j] << " error: " << scientific << CalcNorm(q, j) << endl;
+		errVec.push_back(CalcNorm(q, j));
 		q_2 = q_1;
 		q_1 = q;
 		q.clear();
@@ -274,9 +276,9 @@ double FEM::DivGrad(int vert, int tInd, double h)
 	double t = timeStamps[tInd];
 	double d2udx2 = (Ug(x - h, y, t) - 2 * Ug(x, y, t) + Ug(x + h, y, t)) / (h * h);
 	double d2udy2 = (Ug(x, y - h, t) - 2 * Ug(x, y, t) + Ug(x, y + h, t)) / (h * h);
-	double d2udt2 = (Ug(x, y, t - h) - 2 * Ug(x, y, t) + Ug(x, y, t + h)) / (h * h);
+	//double d2udt2 = (Ug(x, y, t - h) - 2 * Ug(x, y, t) + Ug(x, y, t + h)) / (h * h);
 
-	return d2udx2 + d2udy2 + d2udt2;
+	return d2udx2 + d2udy2;
 }
 
 double FEM::CalcNorm(vector<double> resQ, int tInd)

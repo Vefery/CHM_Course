@@ -33,6 +33,9 @@ struct ThirdBoundaryCondition
 	int betaEquationNum, UbetaEquationNum;
 };
 
+void GenerateGrid(int factor);
+double AverageRate(vector<double> q0, vector<double> q1);
+
 class FEM
 {
 public:
@@ -42,7 +45,7 @@ public:
 	vector<SecondBoundaryCondition> secondBoundary; // Вторые краевые условия
 	vector<ThirdBoundaryCondition> thirdBoundary; // Третьи краевые условия
 	vector<double> timeStamps; // Узлы по времени
-	vector<double> q; // Вектор решения
+	vector<double> q, errVec; // Вектор решения
 	vector<double> q_1, q_2; // Предыдущие векторы q(j-1) and q(j-2)
 
 	void Input(); // Ввод данных из файла

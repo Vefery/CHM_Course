@@ -132,6 +132,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FEM.cpp" />
+    <ClCompile Include="Generator.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="SLAE.cpp" />
   </ItemGroup>
