@@ -19,7 +19,7 @@ double FEM::Function(int vert, int region, int tInd)
 	double x = vertices[vert].x;
 	double y = vertices[vert].y;
 	double t = timeStamps[tInd];
-	double h = 1e-5;
+	double h = 1e-4;
 
 	if (tInd < 2)
 		return Sigma(vert, region) * ((Ug(x, y, t + h * h) - Ug(x, y, t)) / (h * h)) - Lamda(vert, region) * DivGrad(vert, tInd, h);
@@ -60,7 +60,7 @@ double FEM::Ug(int vert, int tInd)
 
 double FEM::Ug(double x, double y, double t)
 {
-	return x + y + t * t;
+	return sin(t) * log(10 + x * y);
 }
 
 double FEM::Uq(double x, double y, Triangle tri, vector<double> resQ)
@@ -185,7 +185,10 @@ void FEM::Solve()
 	FormPortrait();
 	AllocateGlobalMatrices();
 	// Двухслойка для разгона
-	TwoLayerScheme();
+	//TwoLayerScheme();
+	q_1.resize(globalN);
+	for (int i = 0; i < globalN; i++)
+		q_1[i] = Ug(vertices[i].x, vertices[i].y, timeStamps[1]);
 
 	for (int j = 2; j < timeStamps.size(); j++)
 	{
@@ -210,7 +213,7 @@ void FEM::Solve()
 		slae.Input(globalN, 100000, 1e-15, ig.data(), jg.data(), gglA.data(), gguA.data(), diA.data(), b.data());
 		slae.MethodOfConjugateGradientsForNonSymMatrixWithDiagP();
 		q.insert(q.end(), &slae.x[0], &slae.x[slae.n]);
-		cout << "T = " << timeStamps[j] << " error: " << scientific << CalcNorm(q, j) << endl;
+		//cout << "T = " << timeStamps[j] << " error: " << scientific << CalcNorm(q, j) << endl;
 		errVec.push_back(CalcNorm(q, j));
 		q_2 = q_1;
 		q_1 = q;
@@ -311,7 +314,7 @@ double FEM::CalcNorm(vector<double> resQ, int tInd)
 		double f = std::pow(Uq(x, y, curTri, resQ) - Ug(x, y, timeStamps[tInd]), 2.0);
 		res += 0.5 * J * f;
 	}
-	return res;
+	return sqrt(res);
 }
 
 int FEM::IndexOfUnknown(Triangle tri, int i)

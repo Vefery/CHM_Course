@@ -74,8 +74,8 @@ private:
 	double DetD(Triangle tri); // Вычисление определителя D (удвоенной площади) элемента
 	double Alpha(Triangle tri, int k, int i);  // Вычисление значения альфа для построения матрицы G
 	double EdgeLength(int vert1, int vert2); // Вычисление длины ребра
-	double DivGrad(int vert, int tInd, double h);
-	double CalcNorm(vector<double> resQ, int tInd);
+	double DivGrad(int vert, int tInd, double h); // Вычисление div(gradu) для автоматической генерации f
+	double CalcNorm(vector<double> resQ, int tInd); // Вычисление нормы погрешности решения с помощью интеграла
 	int IndexOfUnknown(Triangle tri, int i); // Получение глобального номера узла из локального у элемента
 	void FormLocalM(Triangle tri); // Формирование матрицы G
 	void FormLocalG(Triangle tri); // Формирование матрицы M
@@ -88,6 +88,6 @@ private:
 	void AddToGlobalM(int i, int j, double add); // Добавление значения в глобальную матрицу M
 	void AllocateGlobalMatrices(); // Выделение памяти для глобальной матрицы
 	void FormLocalB(Triangle tri, int tInd); // Формирование локального вектора b
-	void TwoLayerScheme(); // Двухслойка для разгона
-	void ClearMatrices();
+	void TwoLayerScheme(); // Двухслойная схема для разгона метода
+	void ClearMatrices(); // Очистка глобальных матриц
 };
