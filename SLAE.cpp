@@ -129,6 +129,7 @@ void SLAE::OutputDense()
 					printf(REALOUTD, 0.0);
 			}
 		}
+		printf_s(" %.15lf", b[i]);
 		printf("\n");
 	}
 	printf("\n");
@@ -254,7 +255,7 @@ void SLAE::MethodOfConjugateGradientsForSymMatrix()
 
 		r_rPrev = r_rCur;
 
-		printf("Iteration: %d, RelDiscrepancy of r: %.15lf\n", curIt + 1, RelDiscrepancy);
+		//printf("Iteration: %d, RelDiscrepancy of r: %.15lf\n", curIt + 1, RelDiscrepancy);
 	}
 }
 
@@ -369,9 +370,9 @@ void SLAE::MethodOfConjugateGradientsForNonSymMatrix()
 		
 		r_rPrev = r_rCur;
 		
-		printf("Iteration: %d, RelDiscrepancy of r: %.15lf\n", curIt + 1, RelDiscrepancy);
+		//printf("Iteration: %d, RelDiscrepancy of r: %.15lf\n", curIt + 1, RelDiscrepancy);
 	}
-	printf("%.15lf\n", CalculateRelativeDiscrepancy(normB));
+	printf("\nDiscr: %.15lf\n", CalculateRelativeDiscrepancy(normB));
 }
 
 void SLAE::MethodOfConjugateGradientsForNonSymMatrixWithDiagP()

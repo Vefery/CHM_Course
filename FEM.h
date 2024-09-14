@@ -88,6 +88,6 @@ private:
 	void AddToGlobalM(int i, int j, double add); // Добавление значения в глобальную матрицу M
 	void AllocateGlobalMatrices(); // Выделение памяти для глобальной матрицы
 	void FormLocalB(Triangle tri, int tInd); // Формирование локального вектора b
-	void TwoLayerScheme(); // Двухслойная схема для разгона метода
+	void TwoLayerScheme(int j); // Двухслойная схема для разгона метода
 	void ClearMatrices(); // Очистка глобальных матриц
 };

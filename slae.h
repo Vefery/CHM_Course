@@ -1,7 +1,7 @@
 #pragma once
 #include "stdafx.h"
 
-#define REALOUTD "%.2f\t"
+#define REALOUTD "%.15lf\t"
 
 class SLAE {
 public:

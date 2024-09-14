@@ -39,7 +39,7 @@ void GenerateGrid(int factor)
 	}
 	fclose(file);
 
-	for (int f = 1; f <= factor; f++) // !!!!!!!!!!1
+	for (int f = 1; f <= 1; f++) // !!!!!!!!!!1
 	{
 		int end = tris.size();
 		for (int i = 0; i < end; i++)
@@ -130,7 +130,7 @@ void GenerateGrid(int factor)
 
 	FILE* fileVerts;
 	fopen_s(&fileVerts, "Vertices.txt", "w");
-	fprintf_s(fileVerts, "%lf %lf %lf\n", ta, tStep / pow(16, factor), tb);
+	fprintf_s(fileVerts, "%lf %lf %lf\n", ta, tStep / pow(2, factor), tb);
 	fprintf_s(fileVerts, "%d\n", verts.size());
 	for (int i = 0; i < verts.size(); i++)
 		fprintf_s(fileVerts, "%.14lf %.14lf\n", verts[i].x, verts[i].y);
