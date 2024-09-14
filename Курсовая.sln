@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34322.80
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Курсааач", "Курсааач.vcxproj", "{EA96355C-B2E2-41C1-B729-B675C94B93FF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Курсовая", "Курсовая.vcxproj", "{EA96355C-B2E2-41C1-B729-B675C94B93FF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Generator", "..\CHM\Generator\Generator.vcxproj", "{CF2276FA-8847-4763-B66F-0322B6D7AE02}"
 EndProject
